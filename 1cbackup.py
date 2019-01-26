@@ -5,7 +5,7 @@ import design  # Это наш конвертированный файл диз�
 import os
 import subprocess
 import datetime
-
+import re
 
 class ExampleApp(QtWidgets.QDialog, design.Ui_Dialog):
     def __init__(self):
@@ -27,10 +27,11 @@ class ExampleApp(QtWidgets.QDialog, design.Ui_Dialog):
         while LineFile:
             i = 0
             while len(LineFile) > i:
-                # получаем название базы для имени архива
+                # получаем название базы для имени архива, убираем спецсимволы из имени архива
                 if LineFile[i] == '[':
-                    BaseName = LineFile[i + 1:-2]
-                    ArchivName = (str(BaseName) + "_" + str(ArchivTime))
+                    pattern = r"[^\w\s]" #регулярка для очистки от спецсимволов
+                    BaseName = re.sub(pattern, '', LineFile[i + 1: -2])
+                    ArchivName = (".\\Backup\\" + str(BaseName) + "_" + str(ArchivTime))
                     break
                 else:
                     i += 1
@@ -56,13 +57,51 @@ class ExampleApp(QtWidgets.QDialog, design.Ui_Dialog):
         subprocess.call(["shutdown.exe", "/s"])
         sys.exit()
 
+
+#функция установки архиватора
+def setupZip():
+    if os.environ["programfiles(x86)"] == "c:\\Program Files (x86)":
+        subprocess.call(["7zip/7z-x32.exe", "/S"])
+    else:
+        subprocess.call(["7zip/7z-x64.exe", "/S"])
+
+
+# установлен ли архиватор у пользователя, если нет то устанавливаем
+directories = os.listdir(path="C:\\Program Files")
+for i in directories:
+    if i == "7-Zip":
+        break
+else:
+    setupZip()
+
+"""
+import ctypes, sys
+
+#повышаем права до администраторских (не работает)
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+if is_admin():
+    # установлен ли архиватор у пользователя, если нет то устанавливаем
+    directories = os.listdir(path="C:\\Program Files")
+    for i in directories:
+        if i == "7-Zip":
+            break
+    else:
+        setupZip()
+else:
+    # Re-run the program with admin rights
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, "", None, 1)
+"""
+
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ExampleApp()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
     app.exec_()  # и запускаем приложение
 
-
 if __name__ == "__main__":  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()
-
